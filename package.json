@@ -1,0 +1,23 @@
+{
+  "name": "envoy-of-nezphere-nodejs",
+  "version": "1.0.0",
+  "description": "Backend for Envoy-of-Nezphere-Unity",
+  "repository": "https://github.com/Nezphere/envoy-of-nezphere-nodejs",
+  "main": "server.js",
+  "scripts": {
+    "start": "cross-env DEBUG=nezphere:* nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kailang Fu",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "debug": "^3.1.0",
+    "express": "^4.16.3",
+    "mongoose": "^5.1.5"
+  },
+  "devDependencies": {
+    "cross-env": "^5.2.0",
+    "nodemon": "^1.17.5"
+  }
+}
