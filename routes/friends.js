@@ -9,20 +9,20 @@ const { randomString, hmacSha512 } = require('../utils/hashing');
 const { FRIEND_SALT_LENGTH, FRIEND_NAME_LENGTH_MIN, FRIEND_PASS_LENGTH_MIN, SESSION_HASH_LENGTH, SESSION_EXPIRATION_INTERVAL } = require('../utils/constants');
 
 /**
- * post /friends/login?name&pass    => { session }
+ * post /public/login?name&pass    => { session }
  */
 router.post('/login', function(req, res, next) {
 	const name = String(req.body.name || '').toLowerCase();
 	const pass = String(req.body.pass || '');
 
-	Friend.findOne({ name }).exec().then(friend => {
-		if (!friend) throw new Error('friend does not exist: ' + name);
+	Friend.findOne({ name }).exec().then(doc => {
+		if (!doc) throw new Error('friend does not exist: ' + name);
 		
-		const hash = hmacSha512(pass, friend.salt);
-		if (hash === friend.hash) {  // invalidate old session
-			this.friend = friend;
+		const hash = hmacSha512(pass, doc.salt);
+		if (hash === doc.hash) {  // invalidate old session
+			this.friend = doc;
 			this.now = new Date();
-			return Session.updateMany({ friend: friend._id, expiration: { $gt: this.now } }, { $set: { expiration: this.now } }).exec();
+			return Session.updateMany({ friend: doc._id, expiration: { $gt: this.now } }, { $set: { expiration: this.now } }).exec();
 		} else throw new Error('wrong pass');
 	}).then(() => {
 		const expiration = new Date();
@@ -31,7 +31,7 @@ router.post('/login', function(req, res, next) {
 		return Session.create({
 			friend: this.friend._id,
 			hash: randomString(SESSION_HASH_LENGTH),
-			creation: this.now, expiration
+			creation: this.now, expiration,
 		});
 	}).then(session => {
 		res.send({ session: session.hash });
@@ -39,7 +39,7 @@ router.post('/login', function(req, res, next) {
 });
 
 /**
- * post /friends/register?name&pass => 200
+ * post /public/register?name&pass => 200
  */
 router.post('/register', function(req, res, next) {
 	const name = String(req.body.name || '').toLowerCase();

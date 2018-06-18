@@ -6,7 +6,9 @@ mongoose.connect('mongodb://localhost:27017/nezphere', err => {
 });
 
 const app = require('express')();
+
 const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 const routes = require('./routes');

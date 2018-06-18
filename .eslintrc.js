@@ -24,6 +24,10 @@ module.exports = {
         "array-bracket-spacing": [
             "error",
             "always"
-        ]
+        ],
+        "comma-dangle": [
+            "error",
+            "always-multiline"
+        ],
     }
 };
