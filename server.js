@@ -16,7 +16,7 @@ app.use(routes);
 
 app.use(function (err, req, res, next) {
 	log('caught error: ' + err.stack);
-	res.status(500).send({ error: err.stack });
+	res.status(500).send(err.stack);
 	next();
 });
 

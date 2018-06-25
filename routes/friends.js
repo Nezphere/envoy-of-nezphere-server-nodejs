@@ -34,7 +34,7 @@ router.post('/login', function(req, res, next) {
 			creation: this.now, expiration,
 		});
 	}).then(session => {
-		res.send({ session: session.hash });
+		res.send(session.hash);
 	}).catch(next);
 });
 
