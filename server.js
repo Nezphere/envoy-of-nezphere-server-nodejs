@@ -12,7 +12,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 const routes = require('./routes');
-app.use(routes);
+app.use('/v1', routes);
 
 app.use(function (err, req, res, next) {
 	log('caught error: ' + err.stack);

@@ -1,3 +1,5 @@
+const numeral = require('numeral');
+
 const router = require('express').Router();
 
 const Live = require('../models/live');
@@ -67,7 +69,9 @@ router.post('/high-score', secure, function(req, res, next) {
 			} },
 		]).exec();
 	}).then(docs => {
-		res.send(docs);
+		res.send(
+			(docs && docs[0] && `${numeral(docs[0].rank).format('0,0o')}:${numeral(docs[0].score).format('0,0')}`) || 
+			'--:--');
 	}).catch(next);
 });
 
