@@ -15,7 +15,7 @@ router.post('/submit', secure, function(req, res, next) {
 	const hash = String(req.body.hash);
 	const name = String(req.body.name);
 	const accuracy =    parseFloat(req.body.accuracy);
-	const performance = parseInt(req.body.performance);
+	// const performance = parseInt(req.body.performance);
 	const combo =       parseInt(req.body.combo);
 	const score =       parseInt(req.body.score);
 	const perfect =     parseInt(req.body.perfect);
@@ -24,25 +24,33 @@ router.post('/submit', secure, function(req, res, next) {
 	const bad =         parseInt(req.body.bad);
 	const miss =        parseInt(req.body.miss);
 
+	var live, trial;
+
 	Live.findOne({ hash }).exec().then(doc => {
 		return doc ? doc : Live.create({ hash, name, creation: new Date(), creator: req.body.friend });
 	}).then(doc => {
-		this.trial = {
+		live = doc;
+		trial = {
 			friend: req.body.friend._id, live: doc._id, completion: new Date(),
-			accuracy, performance, combo, score, perfect, great, good, bad, miss,
+			accuracy, /*performance, */combo, score, perfect, great, good, bad, miss,
 		};
 
-		return Trial.create(this.trial);
+		return Trial.create(trial);
 	}).then(() => {
-		return Record.findOne({ friend: this.trial.friend, live: this.trial.live }).exec();
+		return Record.findOne({ friend: trial.friend, live: trial.live }).exec();
 	}).then(doc => {
 		if (doc) {
-			return score < doc.score ? null : doc.update({ $set: this.trial }).exec();
+			return score < doc.score ? null : doc.update({ $set: trial }).exec();
 		} else {
-			return Record.create(this.trial);
+			return Record.create(trial);
 		}
 	}).then(() => {
-		res.sendStatus(200);
+		return Record.aggregate([
+			{ $match: { live: live._id, score: { $gt: score } } },
+			{ $count: 'rank' },
+		]);
+	}).then(doc => {
+		res.send(numeral((doc[0] && doc[0].rank || 0) + 1).format('0o').toUpperCase());
 	}).catch(next);
 });
 
@@ -70,8 +78,8 @@ router.post('/high-score', secure, function(req, res, next) {
 		]).exec();
 	}).then(docs => {
 		res.send(
-			(docs && docs[0] && `${numeral(docs[0].rank).format('0,0o')}:${numeral(docs[0].score).format('0,0')}`) || 
-			'--:--');
+			(docs && docs[0] && `${numeral(docs[0].rank + 1).format('0o').toUpperCase()},${docs[0].score}`) || 
+			'--,--');
 	}).catch(next);
 });
 
@@ -95,13 +103,15 @@ router.post('/ranking', function(req, res, next) {
 			} },
 			{ $unwind: { path: '$friend', includeArrayIndex: 'rank' } },
 			{ $project: {
-				friend: '$friend.name',
+				_id: false,
+				name: '$friend.name',
 				score: '$score',
 				rank: '$rank',
 			} },
 		]).exec();
 	}).then(docs => {
-		res.send(docs);
+		docs.forEach(doc => doc.rank = numeral(doc.rank + 1).format('0o').toUpperCase());
+		res.send({ ranking: docs });
 	}).catch(next);
 });
 

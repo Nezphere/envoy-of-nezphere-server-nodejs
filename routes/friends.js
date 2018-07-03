@@ -14,24 +14,25 @@ const { FRIEND_SALT_LENGTH, FRIEND_NAME_LENGTH_MIN, FRIEND_PASS_LENGTH_MIN, SESS
 router.post('/login', function(req, res, next) {
 	const name = String(req.body.name || '').toLowerCase();
 	const pass = String(req.body.pass || '');
+	var friend, now;
 
 	Friend.findOne({ name }).exec().then(doc => {
 		if (!doc) throw new Error('friend does not exist: ' + name);
 		
 		const hash = hmacSha512(pass, doc.salt);
 		if (hash === doc.hash) {  // invalidate old session
-			this.friend = doc;
-			this.now = new Date();
-			return Session.updateMany({ friend: doc._id, expiration: { $gt: this.now } }, { $set: { expiration: this.now } }).exec();
+			friend = doc;
+			now = new Date();
+			return Session.updateMany({ friend: doc._id, expiration: { $gt: now } }, { $set: { expiration: now } }).exec();
 		} else throw new Error('wrong pass');
 	}).then(() => {
 		const expiration = new Date();
-		expiration.setTime(this.now.getTime() + SESSION_EXPIRATION_INTERVAL);
+		expiration.setTime(now.getTime() + SESSION_EXPIRATION_INTERVAL);
 		
 		return Session.create({
-			friend: this.friend._id,
+			friend: friend._id,
 			hash: randomString(SESSION_HASH_LENGTH),
-			creation: this.now, expiration,
+			creation: now, expiration,
 		});
 	}).then(session => {
 		res.send(session.hash);
@@ -42,14 +43,15 @@ router.post('/login', function(req, res, next) {
  * post /public/register?name&pass => 200
  */
 router.post('/register', function(req, res, next) {
-	const name = String(req.body.name || '').toLowerCase();
+	const name = String(req.body.name || '').trim().toLowerCase();
 	const pass = String(req.body.pass || '');
 
-	if (name.length < FRIEND_NAME_LENGTH_MIN) return next(new Error('name too short ' + name));
-	if (pass.length < FRIEND_PASS_LENGTH_MIN) return next(new Error('pass too short ' + pass));
+	if (/[\x00-\x1f\7f:|,]/.test(name)) return next(new Error('name contains illegal character: ' + name));
+	if (name.length < FRIEND_NAME_LENGTH_MIN) return next(new Error('name is too short: ' + name));
+	if (pass.length < FRIEND_PASS_LENGTH_MIN) return next(new Error('pass is too short: ' + pass));
 
 	Friend.findOne({ name }).exec().then(friend => {
-		if (friend) throw new Error('friend already exist: ' + name);
+		if (friend) throw new Error('friend already exists: ' + name);
 
 		const salt = randomString(FRIEND_SALT_LENGTH);
 		const hash = hmacSha512(pass, salt);
