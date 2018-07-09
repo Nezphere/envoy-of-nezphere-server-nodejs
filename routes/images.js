@@ -18,7 +18,7 @@ router.post('/upload', fileUpload(), function(req, res) {
 		hash = sha256(req.files.image.data);
 		return Image.findOne({ hash });
 	}).then(doc => {
-		if (doc) return res.send(doc.path);
+		if (doc) return res.send({ path: doc.path });
 		return Image.create({
 			// @ts-ignore
 			name: req.files.image.name, hash, 
@@ -29,8 +29,10 @@ router.post('/upload', fileUpload(), function(req, res) {
 			// @ts-ignore
 			return req.files.image.mv(path.join(appRoot, 'uploads', doc.path));
 		}).then(() => {
-			return res.send(imageDoc.path);
+			return res.send({ path: imageDoc.path });
 		});
+	}).catch(err => {
+		res.send({ err });
 	});
 });
 
