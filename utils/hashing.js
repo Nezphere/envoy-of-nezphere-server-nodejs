@@ -16,3 +16,9 @@ exports.hmacSha512 = function(text, salt) {
 	hash.update(text);
 	return hash.digest('base64');
 };
+
+exports.sha256 = function(data) {
+	const hash = crypto.createHash('sha256');
+	hash.update(data);
+	return hash.digest('hex');
+};
